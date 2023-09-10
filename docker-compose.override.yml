@@ -2,6 +2,34 @@ version: "3.8"
 
 services:
 
+    reverse-proxy:
+        labels:
+            # HTTP dashboard router
+            - traefik.http.routers.traefik-dashboard-http.entrypoints=http
+            - traefik.http.routers.traefik-dashboard-http.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN?}`)
+            - traefik.http.routers.traefik-dashboard-http.middlewares=https-redirect
+            # HTTPS dashboard router
+            - traefik.http.routers.traefik-dashboard-https.entrypoints=https
+            - traefik.http.routers.traefik-dashboard-https.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN?}`)
+            - traefik.http.routers.traefik-dashboard-https.tls=true
+            - traefik.http.routers.traefik-dashboard-https.tls.certresolver=letsencrypt
+            # - traefik.http.routers.traefik-dashboard-https.middlewares=admin-auth
+            - traefik.http.routers.traefik-dashboard-https.service=api@internal
+        command:
+            # Enable Docker as a provider
+            - --providers.docker
+            # Disable automatic exposure of Docker services
+            - --providers.docker.exposedbydefault=false
+            # Entrypoints ports
+            - --entrypoints.http.address=:80
+            - --entrypoints.https.address=:443
+            # TLS certificates resolver
+            - --certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_ACME_EMAIL?}
+            - --certificatesresolvers.letsencrypt.acme.storage=/certificates/acme.json
+            - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+            # Traefik dashboard
+            - --api
+
     backend:
         image: ${BACKEND_IMAGE?}-dev
         build:
