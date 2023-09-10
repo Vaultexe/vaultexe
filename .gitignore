@@ -2,3 +2,9 @@
 
 # other cloned repos 
 server/
+
+# Environments
+.env
+db.env
+.venv
+venv/
