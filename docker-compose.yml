@@ -1,0 +1,82 @@
+version: "3.8"
+
+services:
+
+  reverse-proxy:
+    image: traefik:v2.10
+    container_name:  vaultex-reverse-proxy
+    restart: always
+    networks:
+      - ${VAULTEXE_PROXY_NETWORK?}
+    ports:
+      - "80:80"
+      - "443:443"
+    labels:
+      # Enable Traefik
+      - traefik.enable=true
+      # Attach to the traefik-public network
+      - traefik.docker.network=${VAULTEXE_PROXY_NETWORK?}
+      # HTTP middlewares
+      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
+    command:
+        # Enable Docker as a provider
+        - --providers.docker
+        # Disable automatic exposure of Docker services
+        - --providers.docker.exposedbydefault=false
+        # Entrypoints ports
+        - --entrypoints.http.address=:80
+        - --entrypoints.https.address=:443
+        # TLS certificates resolver
+        - --certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_ACME_EMAIL?}
+        - --certificatesresolvers.letsencrypt.acme.storage=/certificates/acme.json
+        - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+    volumes:
+        # Add Docker as mounted volume so that Traefik can listen to Docker services labels
+        # :ro means that the volume is mounted in read-only mode
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+        # Mount the volume to store TLS certificates
+        - le-tls-certificates:/certificates
+
+  backend:
+    image: ${BACKEND_IMAGE?}
+    container_name: vaultex-backend
+    restart: always
+    env_file:
+      - env/.env
+      - server/.env
+    build:
+      context: ./server
+      dockerfile: docker/Dockerfile
+    networks:
+      - ${VAULTEXE_PROXY_NETWORK?}
+    labels:
+      # Enable Traefik
+      - traefik.enable=true
+      # Attach to the traefik-public network
+      - traefik.docker.network=${VAULTEXE_PROXY_NETWORK?}
+      # HTTP router
+      - traefik.http.routers.backend-http.entrypoints=http
+      - traefik.http.routers.backend-http.rule=Host(`${BACKEND_DOMAIN?}`)
+      - traefik.http.routers.backend-http.middlewares=https-redirect
+      # HTTPS router
+      - traefik.http.routers.backend-https.entrypoints=https
+      - traefik.http.routers.backend-https.rule=Host(`${BACKEND_DOMAIN?}`)
+      - traefik.http.routers.backend-https.tls=true
+      - traefik.http.routers.backend-https.tls.certresolver=letsencrypt
+    healthcheck:
+        test: curl -f https://${BACKEND_DOMAIN}/health || exit 1
+        interval: 1m
+        timeout: 10s
+        retries: 3
+        start_period: 10s
+
+volumes:
+    # Volume to store the TLS certificates
+    # *Constraint* :  Traefik is always deployed on the same Docker node
+    #                 with the same volume containing the TLS certificates
+    le-tls-certificates:
+
+networks:
+  vaultexe-proxy-network:
+    external: true

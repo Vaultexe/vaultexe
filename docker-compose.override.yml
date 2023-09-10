@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+
+    backend:
+        image: ${BACKEND_IMAGE?}-dev
+        build:
+            context: ./server
+            dockerfile: docker/Dockerfile.dev
+        env_file:
+            - env/.env.dev
+        volumes:
+            - ./server:/app
+        ports:
+            - ${BACKEND_DEV_PORT?}:${BACKEND_DEV_PORT?}
+        healthcheck:
+            disable: true
+
+networks:
+    vaultexe-proxy-network:
+        external: false
