@@ -2,6 +2,7 @@
 
 # other cloned repos 
 server/
+web-extension/
 
 # Environments
 .env
