@@ -7,5 +7,6 @@ web-extension/
 # Environments
 .env
 db.env
+pgadmin.env
 .venv
 venv/
