@@ -4,7 +4,7 @@ services:
 
   reverse-proxy:
     image: traefik:v2.10
-    container_name:  vaultex-reverse-proxy
+    container_name: vaultex-reverse-proxy
     restart: always
     networks:
       - ${VAULTEXE_PROXY_NETWORK?}
@@ -20,23 +20,23 @@ services:
       - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
       - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
     command:
-        # Enable Docker as a provider
-        - --providers.docker
-        # Disable automatic exposure of Docker services
-        - --providers.docker.exposedbydefault=false
-        # Entrypoints ports
-        - --entrypoints.http.address=:80
-        - --entrypoints.https.address=:443
-        # TLS certificates resolver
-        - --certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_ACME_EMAIL?}
-        - --certificatesresolvers.letsencrypt.acme.storage=/certificates/acme.json
-        - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      # Enable Docker as a provider
+      - --providers.docker
+      # Disable automatic exposure of Docker services
+      - --providers.docker.exposedbydefault=false
+      # Entrypoints ports
+      - --entrypoints.http.address=:80
+      - --entrypoints.https.address=:443
+      # TLS certificates resolver
+      - --certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_ACME_EMAIL?}
+      - --certificatesresolvers.letsencrypt.acme.storage=/certificates/acme.json
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
     volumes:
-        # Add Docker as mounted volume so that Traefik can listen to Docker services labels
-        # :ro means that the volume is mounted in read-only mode
-        - /var/run/docker.sock:/var/run/docker.sock:ro
-        # Mount the volume to store TLS certificates
-        - le-tls-certificates:/certificates
+      # Add Docker as mounted volume so that Traefik can listen to Docker services labels
+      # :ro means that the volume is mounted in read-only mode
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Mount the volume to store TLS certificates
+      - le-tls-certificates:/certificates
 
   backend:
     image: ${BACKEND_IMAGE?}
@@ -44,6 +44,7 @@ services:
     restart: always
     env_file:
       - env/.env
+      - env/db.env
       - server/.env
     build:
       context: ./server
@@ -65,17 +66,31 @@ services:
       - traefik.http.routers.backend-https.tls=true
       - traefik.http.routers.backend-https.tls.certresolver=letsencrypt
     healthcheck:
-        test: curl -f https://${BACKEND_DOMAIN}/health || exit 1
-        interval: 1m
-        timeout: 10s
-        retries: 3
-        start_period: 10s
+      test: curl -f https://${BACKEND_DOMAIN}/health || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  db:
+    image: postgres:alpine3.18
+    container_name: vaultexe-db
+    restart: always
+    env_file:
+      - env/.env
+      - env/db.env
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+    networks:
+      - ${VAULTEXE_PROXY_NETWORK?}
 
 volumes:
-    # Volume to store the TLS certificates
-    # *Constraint* :  Traefik is always deployed on the same Docker node
-    #                 with the same volume containing the TLS certificates
-    le-tls-certificates:
+  # Volume to store the TLS certificates
+  # *Constraint* :  Traefik is always deployed on the same Docker node
+  #                 with the same volume containing the TLS certificates
+  le-tls-certificates: # Volume to store the postgres database data
+
+  postgres-db:
 
 networks:
   vaultexe-proxy-network:

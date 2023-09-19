@@ -2,48 +2,94 @@ version: "3.8"
 
 services:
 
-    reverse-proxy:
-        labels:
-            # HTTP dashboard router
-            - traefik.http.routers.traefik-dashboard-http.entrypoints=http
-            - traefik.http.routers.traefik-dashboard-http.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN?}`)
-            - traefik.http.routers.traefik-dashboard-http.middlewares=https-redirect
-            # HTTPS dashboard router
-            - traefik.http.routers.traefik-dashboard-https.entrypoints=https
-            - traefik.http.routers.traefik-dashboard-https.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN?}`)
-            - traefik.http.routers.traefik-dashboard-https.tls=true
-            - traefik.http.routers.traefik-dashboard-https.tls.certresolver=letsencrypt
-            # - traefik.http.routers.traefik-dashboard-https.middlewares=admin-auth
-            - traefik.http.routers.traefik-dashboard-https.service=api@internal
-        command:
-            # Enable Docker as a provider
-            - --providers.docker
-            # Disable automatic exposure of Docker services
-            - --providers.docker.exposedbydefault=false
-            # Entrypoints ports
-            - --entrypoints.http.address=:80
-            - --entrypoints.https.address=:443
-            # TLS certificates resolver
-            - --certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_ACME_EMAIL?}
-            - --certificatesresolvers.letsencrypt.acme.storage=/certificates/acme.json
-            - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
-            # Traefik dashboard
-            - --api
+  reverse-proxy:
+    labels:
+      # HTTP dashboard router
+      - traefik.http.routers.traefik-dashboard-http.entrypoints=http
+      - traefik.http.routers.traefik-dashboard-http.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN?}`)
+      - traefik.http.routers.traefik-dashboard-http.middlewares=https-redirect
+      # HTTPS dashboard router
+      - traefik.http.routers.traefik-dashboard-https.entrypoints=https
+      - traefik.http.routers.traefik-dashboard-https.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN?}`)
+      - traefik.http.routers.traefik-dashboard-https.tls=true
+      - traefik.http.routers.traefik-dashboard-https.tls.certresolver=letsencrypt
+      # - traefik.http.routers.traefik-dashboard-https.middlewares=admin-auth
+      - traefik.http.routers.traefik-dashboard-https.service=api@internal
+    command:
+      # Enable Docker as a provider
+      - --providers.docker
+      # Disable automatic exposure of Docker services
+      - --providers.docker.exposedbydefault=false
+      # Entrypoints ports
+      - --entrypoints.http.address=:80
+      - --entrypoints.https.address=:443
+      # TLS certificates resolver
+      - --certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_ACME_EMAIL?}
+      - --certificatesresolvers.letsencrypt.acme.storage=/certificates/acme.json
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      # Traefik dashboard
+      - --api
 
-    backend:
-        image: ${BACKEND_IMAGE?}-dev
-        build:
-            context: ./server
-            dockerfile: docker/Dockerfile.dev
-        env_file:
-            - env/.env.dev
-        volumes:
-            - ./server:/app
-        ports:
-            - ${BACKEND_DEV_PORT?}:${BACKEND_DEV_PORT?}
-        healthcheck:
-            disable: true
+  backend:
+    image: ${BACKEND_IMAGE?}-dev
+    build:
+      context: ./server
+      dockerfile: docker/Dockerfile.dev
+    env_file:
+      - env/.env.dev
+      - env/db.dev.env
+      - server/.env.dev
+    volumes:
+      - ./server:/app
+    ports:
+      - ${BACKEND_DEV_PORT?}:${BACKEND_DEV_PORT?}
+    healthcheck:
+        disable: true
+
+  db:
+    env_file:
+      - env/.env.dev
+      - env/db.dev.env
+
+  pgadmin:
+    image: dpage/pgadmin4:7.6
+    container_name: vaultexe-pgadmin
+    restart: always
+    env_file:
+      - env/.env.dev
+      - env/pgadmin.dev.env
+    depends_on:
+      - db
+    #   - pgbouncer
+    ports:
+      - ${PGADMIN_EXTERNAL_PORT?}:${PGADMIN_INTERNAL_PORT?}
+    environment:
+      # This redirects all pgadmin logs to /dev/null
+      GUNICORN_ACCESS_LOGFILE: "/dev/null"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - ${VAULTEXE_PROXY_NETWORK?}
+    labels:
+      # Enable Traefik
+      - traefik.enable=true
+      # Attach to the traefik-public network
+      - traefik.docker.network=${VAULTEXE_PROXY_NETWORK?}
+      # HTTP pgadmin dashboard service
+      - traefik.http.services.pgadmin-dashboard.loadbalancer.server.port=${PGADMIN_INTERNAL_PORT?}
+      # HTTP pgadmin dashboard router
+      - traefik.http.routers.pgadmin-dashboard-http.entrypoints=http
+      - traefik.http.routers.pgadmin-dashboard-http.rule=Host(`${PGADMIN_DOMAIN?}`)
+      - traefik.http.routers.pgadmin-dashboard-http.middlewares=https-redirect
+      # HTTPS pgadmin dashboard router
+      - traefik.http.routers.pgadmin-dashboard-https.entrypoints=https
+      - traefik.http.routers.pgadmin-dashboard-https.rule=Host(`${PGADMIN_DOMAIN?}`)
+      - traefik.http.routers.pgadmin-dashboard-https.tls=true
+      - traefik.http.routers.pgadmin-dashboard-https.tls.certresolver=letsencrypt
+
+volumes:
+  pgadmin_data:
 
 networks:
-    vaultexe-proxy-network:
-        external: false
+  vaultexe-proxy-network:
+    external: false
