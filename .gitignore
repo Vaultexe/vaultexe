@@ -3,6 +3,8 @@
 # other cloned repos 
 server/
 web-extension/
+.github/
+diagrams/
 
 # Environments
 .env
