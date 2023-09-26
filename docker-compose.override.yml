@@ -52,7 +52,7 @@ services:
       - env/db.dev.env
 
   pgadmin:
-    image: dpage/pgadmin4:7.6
+    image: dpage/pgadmin4:7.7
     container_name: vaultexe-pgadmin
     restart: always
     env_file:
