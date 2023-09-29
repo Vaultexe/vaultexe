@@ -1,3 +1,5 @@
+> **Note**: This document is a continuation of the [main README.md](https://github.com/Vaultexe/.github/blob/main/profile/README.md) file.
+
 # 🦸🏻‍♂️ Vaultexe super repo
 
 ## 🚀 Getting Started
