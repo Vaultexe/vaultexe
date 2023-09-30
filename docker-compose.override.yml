@@ -51,6 +51,13 @@ services:
       - env/.env.dev
       - env/db.dev.env
 
+  redis:
+    ports:
+        - ${REDIS_PORT?}:${REDIS_PORT?}
+    env_file:
+        - env/.env.dev
+        - env/redis.dev.env
+
   pgadmin:
     image: dpage/pgadmin4:7.7
     container_name: vaultexe-pgadmin
@@ -67,7 +74,7 @@ services:
       # This redirects all pgadmin logs to /dev/null
       GUNICORN_ACCESS_LOGFILE: "/dev/null"
     volumes:
-      - pgadmin_data:/var/lib/pgadmin
+      - pgadmin-data:/var/lib/pgadmin
     networks:
       - ${VAULTEXE_PROXY_NETWORK?}
     labels:
@@ -87,8 +94,42 @@ services:
       - traefik.http.routers.pgadmin-dashboard-https.tls=true
       - traefik.http.routers.pgadmin-dashboard-https.tls.certresolver=letsencrypt
 
+  redisinsight:
+      # Connect to host ip not localhost
+      # Use redis service name as host
+      # Use actual redis port
+      image: redislabs/redisinsight:latest
+      container_name: redisinsight
+      env_file:
+          - env/redis.dev.env
+      depends_on:
+          - redis
+      ports:
+          - ${RIPORT?}:${RIPORT?}
+      volumes:
+          - redisinsight-data:/db
+      networks:
+          - ${VAULTEXE_PROXY_NETWORK?}
+      labels:
+          # Enable Traefik
+          - traefik.enable=true
+          # Attach to the traefik-public network
+          - traefik.docker.network=${VAULTEXE_PROXY_NETWORK?}
+          # HTTP redisinsight dashboard service
+          - traefik.http.services.redisinsight-dashboard.loadbalancer.server.port=${RIPORT?}
+          # HTTP redisinsight dashboard router
+          - traefik.http.routers.redisinsight-dashboard-http.entrypoints=http
+          - traefik.http.routers.redisinsight-dashboard-http.rule=Host(`${RIDOMAIN?}`)
+          - traefik.http.routers.redisinsight-dashboard-http.middlewares=https-redirect
+          # HTTPS redisinsight dashboard router
+          - traefik.http.routers.redisinsight-dashboard-https.entrypoints=https
+          - traefik.http.routers.redisinsight-dashboard-https.rule=Host(`${RIDOMAIN?}`)
+          - traefik.http.routers.redisinsight-dashboard-https.tls=true
+          - traefik.http.routers.redisinsight-dashboard-https.tls.certresolver=letsencrypt
+
 volumes:
-  pgadmin_data:
+  pgadmin-data:
+  redisinsight-data:
 
 networks:
   vaultexe-proxy-network:

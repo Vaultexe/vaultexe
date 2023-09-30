@@ -86,6 +86,21 @@ services:
     networks:
       - ${VAULTEXE_PROXY_NETWORK?}
 
+  redis:
+    image: redis:7.2-rc2-alpine
+    container_name: vaultexe-redis
+    restart: always
+    env_file:
+      - env/.env
+      - env/redis.env
+    volumes:
+      - redis-data:/data
+    networks:
+      - ${VAULTEXE_PROXY_NETWORK?}
+    command:
+      - redis-server
+      - --requirepass REDIS_PASSWORD
+
 volumes:
   # Volume to store the TLS certificates
   # *Constraint* :  Traefik is always deployed on the same Docker node
@@ -93,6 +108,9 @@ volumes:
   le-tls-certificates:
   # Volume to store the postgres database data
   postgres-db:
+  # Volume to store the redis data
+  redis-data:
+    
 
 networks:
   vaultexe-proxy-network:
