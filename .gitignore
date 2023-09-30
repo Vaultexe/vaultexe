@@ -10,5 +10,6 @@ diagrams/
 .env
 db.env
 pgadmin.env
+redis.env
 .venv
 venv/
