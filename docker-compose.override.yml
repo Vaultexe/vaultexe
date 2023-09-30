@@ -38,6 +38,7 @@ services:
     env_file:
       - env/.env.dev
       - env/db.dev.env
+      - env/redis.dev.env
       - server/.env.dev
     volumes:
       - ./server:/app
@@ -99,7 +100,7 @@ services:
       # Use redis service name as host
       # Use actual redis port
       image: redislabs/redisinsight:latest
-      container_name: redisinsight
+      container_name: vaultexe-redisinsight
       env_file:
           - env/redis.dev.env
       depends_on:
