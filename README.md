@@ -13,6 +13,7 @@ These ``.env`` files are secret, and should not be commited to the repository.
 cd env/
 cat .env.dev > .env
 cat db.dev.env > db.env
+cat redis.dev.env > redis.env
 cat pgadmin.dev.env > pgadmin.env
 ```
 
