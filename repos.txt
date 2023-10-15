@@ -1,4 +1,3 @@
 server
 web-extension
 diagrams
-.github
