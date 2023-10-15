@@ -47,8 +47,6 @@ services:
       - redis
     env_file:
       - env/.env
-      - env/db.env
-      - env/redis.env
       - server/.env
     build:
       context: ./server
@@ -80,9 +78,6 @@ services:
     image: postgres:alpine3.18
     container_name: vaultexe-db
     restart: always
-    env_file:
-      - env/.env
-      - env/db.env
     volumes:
       - postgres-db:/var/lib/postgresql/data
     networks:
@@ -92,16 +87,29 @@ services:
     image: redis:7.2-rc2-alpine
     container_name: vaultexe-redis
     restart: always
-    env_file:
-      - env/.env
-      - env/redis.env
     volumes:
       - redis-data:/data
     networks:
       - ${VAULTEXE_PROXY_NETWORK?}
     command:
       - redis-server
-      - --requirepass REDIS_PASSWORD
+      - --requirepass $REDIS_PASSWORD
+
+  rq-worker:
+    image: ${RQ_WORKER_DOCKER_IMAGE?}
+    container_name: vaultexe-rq-worker
+    restart: always
+    depends_on:
+      - redis
+      - db
+    env_file:
+      - env/.env
+      - server/.env
+    build:
+      context: ./server
+      dockerfile: docker/Dockerfile.worker
+    networks:
+      - ${VAULTEXE_PROXY_NETWORK?}
 
 volumes:
   # Volume to store the TLS certificates

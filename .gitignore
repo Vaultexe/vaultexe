@@ -8,8 +8,3 @@ diagrams/
 
 # Environments
 .env
-db.env
-pgadmin.env
-redis.env
-.venv
-venv/

@@ -37,8 +37,6 @@ services:
       dockerfile: docker/Dockerfile.dev
     env_file:
       - env/.env.dev
-      - env/db.dev.env
-      - env/redis.dev.env
       - server/.env.dev
     volumes:
       - ./server:/app
@@ -47,28 +45,22 @@ services:
     healthcheck:
         disable: true
 
-  db:
+  rq-worker:
+    image: ${RQ_WORKER_DOCKER_IMAGE?}-dev
     env_file:
       - env/.env.dev
-      - env/db.dev.env
+      - server/.env.dev
 
   redis:
     ports:
         - ${REDIS_PORT?}:${REDIS_PORT?}
-    env_file:
-        - env/.env.dev
-        - env/redis.dev.env
 
   pgadmin:
     image: dpage/pgadmin4:7.7
     container_name: vaultexe-pgadmin
     restart: always
-    env_file:
-      - env/.env.dev
-      - env/pgadmin.dev.env
     depends_on:
       - db
-    #   - pgbouncer
     ports:
       - ${PGADMIN_EXTERNAL_PORT?}:${PGADMIN_INTERNAL_PORT?}
     environment:
@@ -101,8 +93,6 @@ services:
       # Use actual redis port
       image: redislabs/redisinsight:latest
       container_name: vaultexe-redisinsight
-      env_file:
-          - env/redis.dev.env
       depends_on:
           - redis
       ports:
