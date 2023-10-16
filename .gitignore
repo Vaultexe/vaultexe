@@ -8,3 +8,4 @@ diagrams/
 
 # Environments
 .env
+.env.dev
