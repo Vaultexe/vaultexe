@@ -6,15 +6,11 @@
 
 ### 🏗️ Setup environments
 
-You need to setup the productionn environment files for each project.
+You need to setup the productionn / development environment files for each project.
 These ``.env`` files are secret, and should not be commited to the repository.
 
 ```bash
-cd env/
-cat .env.dev > .env
-cat db.dev.env > db.env
-cat redis.dev.env > redis.env
-cat pgadmin.dev.env > pgadmin.env
+cat env/.env.example | tee env/.env env/.env.dev > /dev/null
 ```
 
 > **Note:** You need to checkout each of the sub-repos' own documentation to setup them up too.
