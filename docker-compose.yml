@@ -47,7 +47,7 @@ services:
       - redis
     env_file:
       - env/.env
-      - server/.env
+      - server/env/.env
     build:
       context: ./server
       dockerfile: docker/Dockerfile
@@ -104,7 +104,7 @@ services:
       - db
     env_file:
       - env/.env
-      - server/.env
+      - server/env/.env
     build:
       context: ./server
       dockerfile: docker/Dockerfile.worker

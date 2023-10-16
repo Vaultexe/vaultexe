@@ -37,7 +37,7 @@ services:
       dockerfile: docker/Dockerfile.dev
     env_file:
       - env/.env.dev
-      - server/.env.dev
+      - server/env/.env.dev
     volumes:
       - ./server:/app
     ports:
@@ -49,7 +49,7 @@ services:
     image: ${RQ_WORKER_DOCKER_IMAGE?}-dev
     env_file:
       - env/.env.dev
-      - server/.env.dev
+      - server/env/.env.dev
 
   redis:
     ports:
