@@ -78,6 +78,8 @@ services:
     image: postgres:alpine3.18
     container_name: vaultexe-db
     restart: always
+    env_file:
+      - env/.env
     volumes:
       - postgres-db:/var/lib/postgresql/data
     networks:

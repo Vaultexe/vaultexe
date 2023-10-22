@@ -59,6 +59,8 @@ services:
     image: dpage/pgadmin4:7.7
     container_name: vaultexe-pgadmin
     restart: always
+    env_file:
+      - env/.env.dev
     depends_on:
       - db
     ports:
