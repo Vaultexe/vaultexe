@@ -56,7 +56,7 @@ services:
         - ${REDIS_PORT?}:${REDIS_PORT?}
 
   pgadmin:
-    image: dpage/pgadmin4:7.8
+    image: dpage/pgadmin4:8.0
     container_name: vaultexe-pgadmin
     restart: always
     env_file:
